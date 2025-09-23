@@ -138,14 +138,14 @@ func (c *Client) evictEligiblePods(ctx context.Context, pods []corev1.Pod, dryRu
 		if c.shouldSkipPod(&p) {
 			continue
 		}
-		
+
 		if dryRun {
 			if c.logger != nil {
 				c.logger.Info("🧪 DRY-RUN: Would evict pod", "namespace", p.Namespace, "pod", p.Name)
 			}
 			continue
 		}
-		
+
 		if err := c.evictSinglePod(ctx, &p); err != nil {
 			if c.logger != nil {
 				c.logger.Warn("⚠️  Failed to evict pod", "namespace", p.Namespace, "pod", p.Name, "error", err)
@@ -165,7 +165,7 @@ func (c *Client) shouldSkipPod(p *corev1.Pod) bool {
 
 func (c *Client) evictSinglePod(ctx context.Context, p *corev1.Pod) error {
 	eviction := &policyv1.Eviction{
-		ObjectMeta: metav1.ObjectMeta{Name: p.Name, Namespace: p.Namespace},
+		ObjectMeta:    metav1.ObjectMeta{Name: p.Name, Namespace: p.Namespace},
 		DeleteOptions: &metav1.DeleteOptions{GracePeriodSeconds: int64Ptr(30)},
 	}
 	return c.CS.CoreV1().Pods(p.Namespace).EvictV1(ctx, eviction)
@@ -178,7 +178,7 @@ func (c *Client) waitForEvictionCompletion(ctx context.Context, node string, pol
 		if err != nil {
 			return err
 		}
-		
+
 		evictable := c.countEvictablePods(left.Items)
 		if evictable == 0 {
 			return nil

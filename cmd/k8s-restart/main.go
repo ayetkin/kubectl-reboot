@@ -56,7 +56,7 @@ func main() {
 			failures = append(failures, node)
 		}
 	}
-	
+
 	if len(failures) > 0 {
 		failuresList := "    " + strings.Join(failures, "\n    ")
 		log.Error("💥 Operation failed", "failed_count", len(failures), "failed_nodes", failuresList)
@@ -92,7 +92,7 @@ func filterExcludedNodes(cfg *config.Config) error {
 	for _, e := range cfg.ExcludeNodes {
 		exset[e] = struct{}{}
 	}
-	
+
 	filtered := make([]string, 0, len(cfg.Nodes))
 	excluded := make([]string, 0)
 	for _, n := range cfg.Nodes {
@@ -103,7 +103,7 @@ func filterExcludedNodes(cfg *config.Config) error {
 		filtered = append(filtered, n)
 	}
 	cfg.Nodes = filtered
-	
+
 	if len(excluded) > 0 {
 		excludedList := "    " + strings.Join(excluded, "\n    ")
 		log.Info("🚫 Excluded nodes", "count", len(excluded), "nodes", excludedList)
