@@ -1,0 +1,50 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+    - exportloopref
+    - gosec
+    - misspell
+    - unconvert
+    - unparam
+    - gocyclo
+    - gofumpt
+  disable:
+    - varnamelen
+    - testpackage
+    - paralleltest
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gosec:
+    excludes:
+      - G204 # Subprocess launched with variable
+  misspell:
+    locale: US
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+        - gocyclo
+    # Exclude some issues for SSH package as it deals with external commands
+    - path: internal/ssh/
+      linters:
+        - gosec
+      text: "G204"
