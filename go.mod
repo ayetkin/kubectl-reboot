@@ -1,18 +1,13 @@
 module github.com/ayetkin/kubectl-reboot
 
-go 1.24.0
-
-toolchain go1.24.7
+go 1.24.7
 
 require (
 	github.com/charmbracelet/log v0.4.2
-	golang.org/x/crypto v0.42.0
+	golang.org/x/crypto v0.41.0
 	k8s.io/api v0.30.2
 	k8s.io/apimachinery v0.30.2
 	k8s.io/client-go v0.30.2
-)
-
-require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
