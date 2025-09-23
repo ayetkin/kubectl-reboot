@@ -39,13 +39,21 @@ func (r *Runner) Run(host, command string, logf func(string, ...any)) error {
 	if err != nil {
 		return fmt.Errorf("❌ SSH connection failed to %s: %v", host, err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			logf("⚠️  Warning: Failed to close SSH client: %v", closeErr)
+		}
+	}()
 
 	session, err := client.NewSession()
 	if err != nil {
 		return fmt.Errorf("❌ SSH session failed: %v", err)
 	}
-	defer session.Close()
+	defer func() {
+		if closeErr := session.Close(); closeErr != nil {
+			logf("⚠️  Warning: Failed to close SSH session: %v", closeErr)
+		}
+	}()
 
 	// Execute command
 	err = session.Run(command)

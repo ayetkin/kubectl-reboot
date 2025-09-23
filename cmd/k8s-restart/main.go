@@ -28,65 +28,110 @@ func main() {
 		log.Fatalf("kube client: %v", err)
 	}
 
+	// Process node configuration
+	if err := processNodeConfiguration(cfg, kclient); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// Filter excluded nodes
+	if len(cfg.ExcludeNodes) > 0 {
+		if err := filterExcludedNodes(cfg); err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+
+	// Log configuration and start operations
+	logConfiguration(cfg)
+
+	sshRunner := &sshpkg.Runner{DryRun: cfg.DryRun, Opts: cfg.SSHOpts, Key: cfg.SSHIdentityFile}
+
+	log.Info("⏳ Initial wait before starting operations", "seconds", 5)
+	time.Sleep(5 * time.Second)
+
+	// Process all nodes
+	var failures []string
+	for _, node := range cfg.Nodes {
+		if err := processNode(cfg, kclient, sshRunner, node); err != nil {
+			log.Error("❌ Node processing failed", "node", node, "error", err)
+			failures = append(failures, node)
+		}
+	}
+	
+	if len(failures) > 0 {
+		failuresList := "    " + strings.Join(failures, "\n    ")
+		log.Error("💥 Operation failed", "failed_count", len(failures), "failed_nodes", failuresList)
+		os.Exit(1)
+	}
+	log.Info("🎉 All nodes processed successfully! Operation completed.")
+}
+
+func processNodeConfiguration(cfg *config.Config, kclient *kube.Client) error {
 	if cfg.AllNodes {
 		nodes, err := kclient.ListNodeNames(cfg.ExcludeControlPlane)
 		if err != nil {
-			log.Fatalf("list nodes: %v", err)
+			return fmt.Errorf("list nodes: %v", err)
 		}
 		cfg.Nodes = nodes
 	} else if cfg.File != "" {
 		fileNodes, err := readNodesFile(cfg.File)
 		if err != nil {
-			log.Fatalf("nodes file: %v", err)
+			return fmt.Errorf("nodes file: %v", err)
 		}
 		cfg.Nodes = append(cfg.Nodes, fileNodes...)
 	}
 
 	if len(cfg.Nodes) == 0 {
-		log.Fatal("no nodes provided")
+		return fmt.Errorf("no nodes provided")
 	}
-	if len(cfg.ExcludeNodes) > 0 {
-		original := append([]string(nil), cfg.Nodes...)
-		exset := map[string]struct{}{}
-		for _, e := range cfg.ExcludeNodes {
-			exset[e] = struct{}{}
-		}
-		filtered := make([]string, 0, len(cfg.Nodes))
-		excluded := make([]string, 0)
-		for _, n := range cfg.Nodes {
-			if _, skip := exset[n]; skip {
-				excluded = append(excluded, n)
-				continue
-			}
-			filtered = append(filtered, n)
-		}
-		cfg.Nodes = filtered
-		if len(excluded) > 0 {
-			excludedList := "    " + strings.Join(excluded, "\n    ")
-			log.Info("🚫 Excluded nodes", "count", len(excluded), "nodes", excludedList)
-		} else {
-			log.Infof("⚠️  --exclude-nodes provided but none matched the target node list")
-		}
+	return nil
+}
 
-		missing := make([]string, 0)
-		origSet := map[string]struct{}{}
-		for _, n := range original {
-			origSet[n] = struct{}{}
+func filterExcludedNodes(cfg *config.Config) error {
+	original := append([]string(nil), cfg.Nodes...)
+	exset := map[string]struct{}{}
+	for _, e := range cfg.ExcludeNodes {
+		exset[e] = struct{}{}
+	}
+	
+	filtered := make([]string, 0, len(cfg.Nodes))
+	excluded := make([]string, 0)
+	for _, n := range cfg.Nodes {
+		if _, skip := exset[n]; skip {
+			excluded = append(excluded, n)
+			continue
 		}
-		for _, want := range cfg.ExcludeNodes {
-			if _, ok := origSet[want]; !ok {
-				missing = append(missing, want)
-			}
-		}
-		if len(missing) > 0 {
-			missingList := "    " + strings.Join(missing, "\n    ")
-			log.Warn("❓ Exclude nodes not found in target set", "missing", missingList)
-		}
-		if len(cfg.Nodes) == 0 {
-			log.Fatal("❌ All nodes were excluded - no nodes to process")
-		}
+		filtered = append(filtered, n)
+	}
+	cfg.Nodes = filtered
+	
+	if len(excluded) > 0 {
+		excludedList := "    " + strings.Join(excluded, "\n    ")
+		log.Info("🚫 Excluded nodes", "count", len(excluded), "nodes", excludedList)
+	} else {
+		log.Infof("⚠️  --exclude-nodes provided but none matched the target node list")
 	}
 
+	missing := make([]string, 0)
+	origSet := map[string]struct{}{}
+	for _, n := range original {
+		origSet[n] = struct{}{}
+	}
+	for _, want := range cfg.ExcludeNodes {
+		if _, ok := origSet[want]; !ok {
+			missing = append(missing, want)
+		}
+	}
+	if len(missing) > 0 {
+		missingList := "    " + strings.Join(missing, "\n    ")
+		log.Warn("❓ Exclude nodes not found in target set", "missing", missingList)
+	}
+	if len(cfg.Nodes) == 0 {
+		return fmt.Errorf("❌ All nodes were excluded - no nodes to process")
+	}
+	return nil
+}
+
+func logConfiguration(cfg *config.Config) {
 	log.Info("🚀 Starting k8s-restart operation")
 
 	// Format nodes list
@@ -104,25 +149,6 @@ func main() {
 	if cfg.DryRun {
 		log.Info("🧪 DRY-RUN mode enabled - no actual changes will be made")
 	}
-
-	sshRunner := &sshpkg.Runner{DryRun: cfg.DryRun, Opts: cfg.SSHOpts, Key: cfg.SSHIdentityFile}
-
-	log.Info("⏳ Initial wait before starting operations", "seconds", 5)
-	time.Sleep(5 * time.Second)
-
-	var failures []string
-	for _, node := range cfg.Nodes {
-		if err := processNode(cfg, kclient, sshRunner, node); err != nil {
-			log.Error("❌ Node processing failed", "node", node, "error", err)
-			failures = append(failures, node)
-		}
-	}
-	if len(failures) > 0 {
-		failuresList := "    " + strings.Join(failures, "\n    ")
-		log.Error("💥 Operation failed", "failed_count", len(failures), "failed_nodes", failuresList)
-		os.Exit(1)
-	}
-	log.Info("🎉 All nodes processed successfully! Operation completed.")
 }
 
 func processNode(cfg *config.Config, kc *kube.Client, ssh *sshpkg.Runner, nodeName string) error {
@@ -206,7 +232,11 @@ func readNodesFile(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			log.Warn("Failed to close nodes file", "error", closeErr)
+		}
+	}()
 	var nodes []string
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {

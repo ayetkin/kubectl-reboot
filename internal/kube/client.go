@@ -123,18 +123,30 @@ func (c *Client) EvictPods(ctx context.Context, node string, pollInterval time.D
 	if err != nil {
 		return err
 	}
-	for _, p := range pods.Items {
-		if isMirrorPod(&p) || hasOwnerKind(&p, "DaemonSet") || (p.Namespace == "kube-system" && hasCritical(&p)) || p.DeletionTimestamp != nil {
+
+	// Evict eligible pods
+	if err := c.evictEligiblePods(ctx, pods.Items, dryRun); err != nil {
+		return err
+	}
+
+	// Wait for eviction completion
+	return c.waitForEvictionCompletion(ctx, node, pollInterval, timeout)
+}
+
+func (c *Client) evictEligiblePods(ctx context.Context, pods []corev1.Pod, dryRun bool) error {
+	for _, p := range pods {
+		if c.shouldSkipPod(&p) {
 			continue
 		}
+		
 		if dryRun {
 			if c.logger != nil {
 				c.logger.Info("🧪 DRY-RUN: Would evict pod", "namespace", p.Namespace, "pod", p.Name)
 			}
 			continue
 		}
-		eviction := &policyv1.Eviction{ObjectMeta: metav1.ObjectMeta{Name: p.Name, Namespace: p.Namespace}, DeleteOptions: &metav1.DeleteOptions{GracePeriodSeconds: int64Ptr(30)}}
-		if err := c.CS.CoreV1().Pods(p.Namespace).EvictV1(ctx, eviction); err != nil {
+		
+		if err := c.evictSinglePod(ctx, &p); err != nil {
 			if c.logger != nil {
 				c.logger.Warn("⚠️  Failed to evict pod", "namespace", p.Namespace, "pod", p.Name, "error", err)
 			}
@@ -144,25 +156,46 @@ func (c *Client) EvictPods(ctx context.Context, node string, pollInterval time.D
 			}
 		}
 	}
+	return nil
+}
+
+func (c *Client) shouldSkipPod(p *corev1.Pod) bool {
+	return isMirrorPod(p) || hasOwnerKind(p, "DaemonSet") || (p.Namespace == "kube-system" && hasCritical(p)) || p.DeletionTimestamp != nil
+}
+
+func (c *Client) evictSinglePod(ctx context.Context, p *corev1.Pod) error {
+	eviction := &policyv1.Eviction{
+		ObjectMeta: metav1.ObjectMeta{Name: p.Name, Namespace: p.Namespace},
+		DeleteOptions: &metav1.DeleteOptions{GracePeriodSeconds: int64Ptr(30)},
+	}
+	return c.CS.CoreV1().Pods(p.Namespace).EvictV1(ctx, eviction)
+}
+
+func (c *Client) waitForEvictionCompletion(ctx context.Context, node string, pollInterval time.Duration, timeout time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		left, err := c.CS.CoreV1().Pods("").List(ctx, metav1.ListOptions{FieldSelector: fmt.Sprintf("spec.nodeName=%s", node)})
 		if err != nil {
 			return err
 		}
-		evictable := 0
-		for _, p := range left.Items {
-			if isMirrorPod(&p) || hasOwnerKind(&p, "DaemonSet") || (p.Namespace == "kube-system" && hasCritical(&p)) {
-				continue
-			}
-			evictable++
-		}
+		
+		evictable := c.countEvictablePods(left.Items)
 		if evictable == 0 {
 			return nil
 		}
 		time.Sleep(pollInterval)
 	}
 	return fmt.Errorf("timeout waiting for pods eviction on %s", node)
+}
+
+func (c *Client) countEvictablePods(pods []corev1.Pod) int {
+	evictable := 0
+	for _, p := range pods {
+		if !c.shouldSkipPod(&p) {
+			evictable++
+		}
+	}
+	return evictable
 }
 
 func IsNodeReady(n *corev1.Node) bool {
