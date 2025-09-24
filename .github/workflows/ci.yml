@@ -13,20 +13,16 @@ env:
 jobs:
   test:
     name: Test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        go-version: ['1.24']
+    runs-on: ubuntu-latest
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     
-    - name: Set up Go ${{ matrix.go-version }}
+    - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: ${{ env.GO_VERSION }}
         cache-dependency-path: go.sum
     
     - name: Cache Go modules
@@ -35,9 +31,8 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
           ${{ runner.os }}-go-
     
     - name: Download dependencies
@@ -53,7 +48,6 @@ jobs:
       run: make vet
     
     - name: Check code formatting
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == env.GO_VERSION
       run: |
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
           echo "Go code is not properly formatted:"
@@ -62,19 +56,16 @@ jobs:
         fi
     
     - name: Run staticcheck
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == env.GO_VERSION
       uses: dominikh/staticcheck-action@v1.3.0
       with:
         version: "2023.1.7"
         install-go: false
     
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == env.GO_VERSION
       run: |
         go test -race -coverprofile=coverage.txt -covermode=atomic ./...
     
     - name: Upload coverage reports
-      if: matrix.os == 'ubuntu-latest' && matrix.go-version == env.GO_VERSION
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.txt
@@ -118,7 +109,7 @@ jobs:
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: kubectl-reboot-${{ runner.os }}
+        name: kubectl-reboot-binary
         path: bin/kubectl-reboot
         retention-days: 7
 
