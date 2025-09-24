@@ -21,43 +21,15 @@ A kubectl plugin that safely restarts Kubernetes nodes by draining pods, rebooti
 
 [Krew](https://krew.sigs.k8s.io/) is the plugin manager for kubectl command-line tool.
 
-#### Step 1: Install Krew
-
 If you haven't installed Krew yet, follow the [official installation guide](https://krew.sigs.k8s.io/docs/user-guide/setup/install/).
 
-**macOS/Linux:**
-```bash
-(
-  set -x; cd "$(mktemp -d)" &&
-  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
-  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
-  KREW="krew-${OS}_${ARCH}" &&
-  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
-  tar zxvf "${KREW}.tar.gz" &&
-  ./"${KREW}" install krew
-)
-```
-
-#### Step 2: Add Krew to PATH
-
-Add the following to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
-
-```bash
-export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
-```
-
-Reload your shell or run:
-```bash
-source ~/.bashrc  # or ~/.zshrc
-```
-
-#### Step 3: Install kubectl-reboot
+Once Krew is installed, install kubectl-reboot:
 
 ```bash
 kubectl krew install reboot
 ```
 
-#### Step 4: Verify Installation
+Verify the installation:
 
 ```bash
 kubectl reboot --help

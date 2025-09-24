@@ -16,52 +16,26 @@ permissions:
   issues: read
   pull-requests: read
 
-env:
-  GO_VERSION: '1.24'
-
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.24
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        cache-dependency-path: go.sum
-    
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-    
     - name: Download dependencies
       run: go mod download
     
-    - name: Run tests
-      run: make test
-    
-    - name: Run vet
-      run: make vet
-    
-    - name: Run fmt check
-      run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "Go code is not properly formatted:"
-          gofmt -s -l .
-          exit 1
-        fi
+    - name: Run all checks (vet, fmt, test)
+      run: make check
 
   build:
     needs: test
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.24
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       release-notes: ${{ steps.changelog.outputs.changelog }}
@@ -70,22 +44,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        cache-dependency-path: go.sum
-    
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
     
     - name: Get version
       id: version
@@ -128,23 +86,24 @@ jobs:
           fi
         done
         
-        # Update kubectl-reboot.yaml with checksums
         cd ..
-        cp kubectl-reboot.yaml kubectl-reboot.yaml.updated
         
-        # Update version
-        sed -i "s/version: v[0-9]\+\.[0-9]\+\.[0-9]\+/version: ${{ steps.version.outputs.VERSION }}/" kubectl-reboot.yaml.updated
+        # Set up template variables
+        export VERSION="${{ steps.version.outputs.VERSION }}"
+        export CHECKSUM_LINUX_AMD64=$(grep "kubectl-reboot-linux-amd64.tar.gz" dist/checksums.txt | cut -d' ' -f1)
+        export CHECKSUM_LINUX_ARM64=$(grep "kubectl-reboot-linux-arm64.tar.gz" dist/checksums.txt | cut -d' ' -f1)
+        export CHECKSUM_DARWIN_AMD64=$(grep "kubectl-reboot-darwin-amd64.tar.gz" dist/checksums.txt | cut -d' ' -f1)
+        export CHECKSUM_DARWIN_ARM64=$(grep "kubectl-reboot-darwin-arm64.tar.gz" dist/checksums.txt | cut -d' ' -f1)
         
-        # Update URLs with new version
-        sed -i "s|/releases/download/v[0-9]\+\.[0-9]\+\.[0-9]\+/|/releases/download/${{ steps.version.outputs.VERSION }}/|g" kubectl-reboot.yaml.updated
+        # Generate final manifest using envsubst
+        envsubst < kubectl-reboot.yaml > kubectl-reboot.yaml.updated
         
-        # Update checksums
-        for platform in "linux-amd64" "linux-arm64" "darwin-amd64" "darwin-arm64"; do
-          if [ -f "dist/kubectl-reboot-${platform}.tar.gz" ]; then
-            checksum=$(grep "kubectl-reboot-${platform}.tar.gz" dist/checksums.txt | cut -d' ' -f1)
-            sed -i "/kubectl-reboot-${platform}.tar.gz/,/sha256:/ s/sha256: \"[^\"]*\"/sha256: \"$checksum\"/" kubectl-reboot.yaml.updated
-          fi
-        done
+        echo "✅ Updated manifest with:"
+        echo "   Version: $VERSION"
+        echo "   Linux AMD64: $CHECKSUM_LINUX_AMD64"
+        echo "   Linux ARM64: $CHECKSUM_LINUX_ARM64"
+        echo "   Darwin AMD64: $CHECKSUM_DARWIN_AMD64"
+        echo "   Darwin ARM64: $CHECKSUM_DARWIN_ARM64"
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -202,8 +161,9 @@ jobs:
       run: |
         echo "🎉 Release created successfully!"
         echo ""
-        echo "📋 To submit to Krew, update the kubectl-reboot.yaml file with:"
-        echo "   - New version: ${{ needs.build.outputs.version }}"
-        echo "   - Updated checksums (see artifacts/kubectl-reboot.yaml.updated)"
+        echo "📋 Krew manifest has been automatically updated with:"
+        echo "   - Version: ${{ needs.build.outputs.version }}"
+        echo "   - All platform checksums"
         echo ""
         echo "📁 Updated manifest available in release assets as: kubectl-reboot.yaml.updated"
+        echo "   Ready for Krew submission!"

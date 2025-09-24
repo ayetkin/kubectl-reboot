@@ -7,23 +7,16 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-env:
-  GO_VERSION: '1.24'
-
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.24
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        cache-dependency-path: go.sum
     
     - name: Download dependencies
       run: go mod download
@@ -31,34 +24,19 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
     
-    - name: Run tests
-      run: make test
-    
-    - name: Run vet
-      run: make vet
-    
-    - name: Check code formatting
-      run: |
-        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "Go code is not properly formatted:"
-          gofmt -s -l .
-          exit 1
-        fi
+    - name: Run all checks (vet, fmt, test)
+      run: make check
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.24
     needs: test
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        cache-dependency-path: go.sum
     
     - name: Build for current platform
       run: make build
@@ -73,6 +51,8 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.24
     permissions:
       security-events: write
       contents: read
@@ -80,12 +60,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        cache-dependency-path: go.sum
     
     - name: Run Security Checks
       run: |
@@ -113,16 +87,12 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    container:
+      image: golang:1.24
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ env.GO_VERSION }}
-        cache-dependency-path: go.sum
     
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v4
