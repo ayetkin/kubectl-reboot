@@ -4,78 +4,209 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        type: string
 
 permissions:
   contents: write
+  issues: read
+  pull-requests: read
+
+env:
+  GO_VERSION: '1.24'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: ${{ env.GO_VERSION }}
+        cache-dependency-path: go.sum
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    
+    - name: Download dependencies
+      run: go mod download
     
     - name: Run tests
       run: make test
     
     - name: Run vet
       run: make vet
+    
+    - name: Run fmt check
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Go code is not properly formatted:"
+          gofmt -s -l .
+          exit 1
+        fi
 
-  release:
+  build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      release-notes: ${{ steps.changelog.outputs.changelog }}
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.24'
+        go-version: ${{ env.GO_VERSION }}
+        cache-dependency-path: go.sum
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
     
     - name: Get version
       id: version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.tag }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/}"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version: $VERSION"
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        if git tag --list | grep -q '^v'; then
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep '^v' | head -2 | tail -1)
+          if [ -n "$PREVIOUS_TAG" ]; then
+            echo "changelog<<EOF" >> $GITHUB_OUTPUT
+            git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "changelog=Initial release" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "changelog=Initial release" >> $GITHUB_OUTPUT
+        fi
     
     - name: Build release binaries
       run: make package
     
-    - name: Generate checksums
+    - name: Generate checksums and update manifest
       run: |
         cd dist
+        # Generate checksums
         for file in *.tar.gz *.zip; do
           if [ -f "$file" ]; then
             sha256sum "$file" >> checksums.txt
           fi
         done
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.version.outputs.VERSION }}
-        release_name: Release ${{ steps.version.outputs.VERSION }}
-        draft: false
-        prerelease: false
-    
-    - name: Upload Release Assets
-      run: |
-        for file in dist/*.tar.gz dist/*.zip dist/checksums.txt; do
-          if [ -f "$file" ]; then
-            gh release upload ${{ steps.version.outputs.VERSION }} "$file"
+        
+        # Update kubectl-reboot.yaml with checksums
+        cd ..
+        cp kubectl-reboot.yaml kubectl-reboot.yaml.updated
+        
+        # Update version
+        sed -i "s/version: v[0-9]\+\.[0-9]\+\.[0-9]\+/version: ${{ steps.version.outputs.VERSION }}/" kubectl-reboot.yaml.updated
+        
+        # Update URLs with new version
+        sed -i "s|/releases/download/v[0-9]\+\.[0-9]\+\.[0-9]\+/|/releases/download/${{ steps.version.outputs.VERSION }}/|g" kubectl-reboot.yaml.updated
+        
+        # Update checksums
+        for platform in "linux-amd64" "linux-arm64" "darwin-amd64" "darwin-arm64" "windows-amd64"; do
+          if [ -f "dist/kubectl-reboot-${platform}.tar.gz" ]; then
+            checksum=$(grep "kubectl-reboot-${platform}.tar.gz" dist/checksums.txt | cut -d' ' -f1)
+            sed -i "/kubectl-reboot-${platform}.tar.gz/,/sha256:/ s/sha256: \"[^\"]*\"/sha256: \"$checksum\"/" kubectl-reboot.yaml.updated
+          elif [ -f "dist/kubectl-reboot-${platform}.zip" ]; then
+            checksum=$(grep "kubectl-reboot-${platform}.zip" dist/checksums.txt | cut -d' ' -f1)
+            sed -i "/kubectl-reboot-${platform}.zip/,/sha256:/ s/sha256: \"[^\"]*\"/sha256: \"$checksum\"/" kubectl-reboot.yaml.updated
           fi
         done
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-assets
+        path: |
+          dist/*
+          kubectl-reboot.yaml.updated
+        retention-days: 5
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-assets
+        path: ./artifacts
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.build.outputs.version }}
+        name: Release ${{ needs.build.outputs.version }}
+        body: |
+          ## Changes
+          ${{ needs.build.outputs.release-notes }}
+          
+          ## Installation
+          
+          ### Via Krew (Recommended)
+          ```bash
+          kubectl krew install reboot
+          ```
+          
+          ### Manual Installation
+          Download the appropriate binary for your platform from the assets below.
+          
+          ## Checksums
+          See `checksums.txt` for SHA256 checksums of all artifacts.
+        files: |
+          artifacts/dist/*
+          artifacts/kubectl-reboot.yaml.updated
+        draft: false
+        prerelease: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Update Krew manifest
+    - name: Update Krew manifest instructions
       run: |
-        echo "Update kubectl-reboot.yaml with the following checksums:"
-        cat dist/checksums.txt
+        echo "🎉 Release created successfully!"
+        echo ""
+        echo "📋 To submit to Krew, update the kubectl-reboot.yaml file with:"
+        echo "   - New version: ${{ needs.build.outputs.version }}"
+        echo "   - Updated checksums (see artifacts/kubectl-reboot.yaml.updated)"
+        echo ""
+        echo "📁 Updated manifest available in release assets as: kubectl-reboot.yaml.updated"

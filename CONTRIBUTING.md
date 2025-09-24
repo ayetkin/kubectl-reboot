@@ -6,153 +6,289 @@ Thank you for your interest in contributing to kubectl-reboot! This document pro
 
 This project follows the [Kubernetes Community Code of Conduct](https://github.com/kubernetes/community/blob/master/code-of-conduct.md). By participating, you are expected to uphold this code.
 
+## Quick Start for Contributors
+
+1. **Fork** the repository on GitHub
+2. **Clone** your fork locally
+3. **Create** a feature branch from `main`
+4. **Make** your changes and add tests
+5. **Run** tests and linting: `make check`
+6. **Commit** with conventional commit messages
+7. **Push** to your fork and **submit** a Pull Request
+
 ## How to Contribute
 
-### Reporting Bugs
+### 🐛 Reporting Bugs
 
 1. **Check existing issues** first to avoid duplicates
 2. **Use the bug report template** when creating new issues
 3. **Provide detailed information**:
-   - kubectl-reboot version
-   - Kubernetes version
-   - Operating system
-   - Steps to reproduce
+   - kubectl-reboot version (`kubectl reboot --version`)
+   - Kubernetes version (`kubectl version`)
+   - Operating system and architecture
+   - SSH configuration and target node details
+   - Steps to reproduce the issue
    - Expected vs actual behavior
-   - Relevant logs or output
+   - Complete error messages and logs
 
-### Suggesting Features
+### 💡 Suggesting Features
 
 1. **Check existing feature requests** first
 2. **Open an issue** with the feature request template
 3. **Describe the use case** and why the feature would be valuable
 4. **Provide examples** of how the feature would be used
+5. **Consider backwards compatibility** implications
 
-### Contributing Code
+### 🔧 Contributing Code
 
-#### Before You Start
+#### Prerequisites
 
-1. **Fork the repository** and create a new branch from `main`
-2. **Check existing issues** - look for issues labeled `good first issue` or `help wanted`
-3. **Discuss major changes** by opening an issue first
+- **Go 1.23 or later**
+- **kubectl** installed and configured
+- **Access to a Kubernetes cluster** for testing (kind, minikube, or cloud cluster)
+- **SSH access** to test nodes (for integration testing)
+- **Git** configured with your GitHub account
 
-#### Development Setup
+#### Development Environment Setup
 
-1. **Prerequisites**:
-   - Go 1.23 or later
-   - kubectl installed and configured
-   - Access to a Kubernetes cluster for testing
+```bash
+# Clone your fork
+git clone https://github.com/YOUR-USERNAME/kubectl-reboot.git
+cd kubectl-reboot
 
-2. **Clone and setup**:
+# Add upstream remote
+git remote add upstream https://github.com/ayetkin/kubectl-reboot.git
+
+# Install dependencies
+go mod download
+
+# Run initial build and tests
+make build
+make test
+make check
+```
+
+#### Development Workflow
+
+1. **Sync with upstream**:
    ```bash
-   git clone https://github.com/your-username/kubectl-reboot.git
-   cd kubectl-reboot
-   go mod download
+   git checkout main
+   git pull upstream main
+   git push origin main
    ```
 
-3. **Build and test**:
-   ```bash
-   make build
-   make test
-   make check
-   ```
-
-#### Making Changes
-
-1. **Create a feature branch**:
+2. **Create a feature branch**:
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-2. **Make your changes**:
-   - Follow the existing code style
-   - Add tests for new functionality
-   - Update documentation as needed
-   - Ensure all tests pass
+3. **Make your changes**:
+   - Follow existing code patterns
+   - Add comprehensive tests
+   - Update documentation
+   - Test manually with real clusters
 
-3. **Commit your changes**:
+4. **Validate your changes**:
    ```bash
-   git add .
-   git commit -m "feat: add your feature description"
+   make check      # Run all linting and formatting checks
+   make test       # Run unit tests
+   make build      # Ensure it builds successfully
+   ./bin/kubectl-reboot --help  # Test the binary
    ```
 
-   Use conventional commit messages:
-   - `feat:` for new features
-   - `fix:` for bug fixes
-   - `docs:` for documentation changes
-   - `test:` for adding tests
-   - `refactor:` for code refactoring
-   - `chore:` for maintenance tasks
+5. **Commit with conventional commit format**:
+   ```bash
+   git add .
+   git commit -m "feat: add support for custom drain timeout"
+   ```
 
-4. **Push and create a pull request**:
+   **Commit message format**:
+   - `feat:` - New features
+   - `fix:` - Bug fixes
+   - `docs:` - Documentation changes
+   - `test:` - Adding or updating tests
+   - `refactor:` - Code refactoring without functional changes
+   - `perf:` - Performance improvements
+   - `ci:` - CI/CD related changes
+   - `chore:` - Maintenance and tooling
+
+6. **Push and create Pull Request**:
    ```bash
    git push origin feature/your-feature-name
    ```
 
-#### Code Style Guidelines
+#### Code Guidelines
 
-- **Follow Go conventions**: Use `go fmt`, `go vet`, and `golangci-lint`
-- **Write clear, descriptive variable and function names**
-- **Add comments for complex logic**
-- **Keep functions small and focused**
-- **Handle errors appropriately**
-- **Use structured logging with the existing logger**
+**Go Style**:
+- Follow standard Go conventions (`go fmt`, `go vet`)
+- Use meaningful variable and function names
+- Keep functions focused and small (< 50 lines when possible)
+- Handle all errors appropriately
+- Use the existing logging patterns with structured logging
 
-#### Testing
+**Architecture Principles**:
+- **Separation of Concerns**: Keep Kubernetes operations, SSH operations, and business logic separate
+- **Testability**: Write code that can be easily unit tested
+- **Error Handling**: Provide clear, actionable error messages
+- **Configuration**: Use the existing configuration patterns
+- **Logging**: Use structured logging with appropriate levels
 
-- **Write unit tests** for new functionality
-- **Test with different Kubernetes versions** when possible
-- **Test on different platforms** (Linux, macOS, Windows)
-- **Include integration tests** for significant features
-- **Verify that `make check` passes**
+**Testing**:
+- **Unit Tests**: Test individual functions and components
+- **Integration Tests**: Test end-to-end workflows where possible
+- **Error Scenarios**: Test error conditions and edge cases
+- **Multiple Platforms**: Consider platform-specific behavior
 
-#### Documentation
+#### Adding New Features
 
-- **Update README.md** if adding new features or changing behavior
-- **Add or update command-line help text**
-- **Include examples** for new functionality
-- **Update the Krew manifest** if needed
+**Major Features** (new commands, significant workflow changes):
+1. **Open an issue first** to discuss the design
+2. **Write a design document** for complex features
+3. **Break down into smaller PRs** when possible
+4. **Update help text** and documentation
+5. **Add comprehensive tests**
 
-### Pull Request Process
+**Minor Features** (flags, small enhancements):
+1. **Follow existing patterns** for similar functionality
+2. **Add appropriate validation**
+3. **Update help text**
+4. **Add tests**
 
-1. **Ensure your PR has a clear title and description**
-2. **Reference related issues** using "Fixes #123" or "Relates to #123"
-3. **Include a checklist** of what you've tested
-4. **Respond to feedback** promptly and constructively
-5. **Keep your branch up to date** with the main branch
+#### File Organization
 
-#### PR Checklist
+```
+├── cmd/k8s-restart/       # Main application entry point
+├── internal/
+│   ├── config/           # Configuration management
+│   ├── kube/            # Kubernetes client operations
+│   └── ssh/             # SSH client operations  
+├── scripts/             # Build and release scripts
+├── .github/workflows/   # CI/CD pipelines
+└── docs/               # Additional documentation
+```
 
-- [ ] Code follows the project's style guidelines
-- [ ] Self-review of the code has been performed
-- [ ] Code is commented, particularly in hard-to-understand areas
-- [ ] Corresponding changes to documentation have been made
-- [ ] Changes generate no new warnings
-- [ ] Unit tests pass locally
-- [ ] Integration tests pass (if applicable)
-- [ ] Any dependent changes have been merged and published
+### 📝 Documentation
 
-## Release Process
+- **README updates**: Keep installation and usage instructions current
+- **Help text**: Update command-line help for new options
+- **Examples**: Add real-world usage examples
+- **CHANGELOG**: Follow Keep a Changelog format
+- **Code comments**: Document complex logic and public APIs
 
-Releases are automated through GitHub Actions when tags are pushed:
+### 🧪 Testing
 
-1. **Version bump**: Update version in relevant files
-2. **Tag release**: `git tag v1.x.x && git push origin v1.x.x`
-3. **GitHub Actions**: Automatically builds and publishes release
-4. **Krew manifest**: Update checksums in `kubectl-reboot.yaml`
+#### Running Tests
 
-## Getting Help
+```bash
+# Run all tests
+make test
 
-- **Documentation**: Check the README.md and inline help
-- **Issues**: Search existing issues or create a new one
-- **Discussions**: Use GitHub Discussions for questions and ideas
+# Run tests with coverage
+go test -cover ./...
 
-## Recognition
+# Run specific tests
+go test ./internal/config -v
 
-Contributors will be recognized in:
-- Release notes for significant contributions
-- Contributors section of the README
-- GitHub's automatic contributor recognition
+# Run integration tests (requires cluster access)
+go test -tags=integration ./test/...
+```
 
-## License
+#### Test Categories
 
-By contributing to kubectl-reboot, you agree that your contributions will be licensed under the MIT License.
+- **Unit Tests**: Fast, isolated tests for individual components
+- **Integration Tests**: Tests that require Kubernetes cluster access
+- **End-to-End Tests**: Full workflow tests with real nodes
+
+#### Writing Tests
+
+- **Use table-driven tests** for multiple scenarios
+- **Mock external dependencies** (Kubernetes API, SSH connections)
+- **Test error conditions** as well as success paths
+- **Use descriptive test names** that explain what's being tested
+
+### 🚀 Pull Request Process
+
+#### Before Submitting
+
+- [ ] **Tests pass**: `make check` succeeds
+- [ ] **Documentation updated**: README, help text, etc.
+- [ ] **Self-review completed**: Check your own code for issues
+- [ ] **Commits are clean**: Squash fixup commits, use clear messages
+- [ ] **Branch is current**: Rebased on latest main
+
+#### PR Description Template
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Manual testing performed
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review performed
+- [ ] Documentation updated
+- [ ] Tests added for new functionality
+- [ ] All tests pass
+```
+
+#### Review Process
+
+1. **Automated checks**: CI must pass
+2. **Code review**: At least one maintainer review
+3. **Testing**: Reviewers may test manually
+4. **Approval**: Maintainer approval required for merge
+5. **Merge**: Squash and merge preferred
+
+## 🏷️ Release Process
+
+Releases are automated but follow this process:
+
+### For Maintainers
+
+1. **Update version** in relevant files
+2. **Update CHANGELOG.md** with new version
+3. **Create and push tag**: `./scripts/release.sh v1.x.x`
+4. **GitHub Actions** handles the rest automatically
+5. **Update Krew index** after release is published
+
+### Release Script Usage
+
+```bash
+# Create a new release
+./scripts/release.sh v1.2.3
+
+# Preview what would happen
+./scripts/release.sh v1.2.3 --dry-run
+
+# Create draft release for testing
+./scripts/release.sh v1.2.3 --draft
+```
+
+## 🆘 Getting Help
+
+- **Issues**: Search existing issues or create new ones
+- **Discussions**: Use GitHub Discussions for questions
+- **Documentation**: Check README and code comments
+- **Examples**: Look at existing tests and usage patterns
+
+## 🎖️ Recognition
+
+Contributors are recognized through:
+- **Contributors section** in README
+- **Release notes** for significant contributions  
+- **GitHub's contributor statistics**
+- **Special thanks** in major release announcements
+
+## 📄 License
+
+By contributing to kubectl-reboot, you agree that your contributions will be licensed under the project's MIT License.

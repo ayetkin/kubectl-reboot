@@ -1,21 +1,33 @@
 run:
   timeout: 5m
+  tests: true
 
 linters:
   enable:
-    - gofmt
-    - goimports
-    - govet
     - errcheck
+    - gosimple
+    - govet
+    - ineffassign
     - staticcheck
     - unused
-    - gosimple
-    - ineffassign
     - typecheck
+    - gofmt
+    - gofumpt
+    - goimports
+    - goconst
+    - gocritic
+    - gocyclo
     - misspell
+    - nakedret
+    - prealloc
+    - revive
+    - stylecheck
     - unconvert
     - unparam
-    - gocyclo
-    - gofumpt
-  disable:
+    - whitespace
     - gosec
+  disable: []
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

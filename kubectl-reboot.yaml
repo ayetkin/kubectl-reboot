@@ -5,12 +5,31 @@ metadata:
 spec:
   version: v1.0.0
   homepage: https://github.com/ayetkin/kubectl-reboot
-  shortDescription: Safely reboot Kubernetes nodes
+  shortDescription: Safely restart Kubernetes nodes with automated drain and SSH reboot
   description: |
-    kubectl-reboot is a kubectl plugin that safely reboots Kubernetes nodes
-    by draining pods, rebooting via SSH, verifying the reboot, and uncordoning
-    the nodes. It supports both single node operations and cluster-wide reboots
-    with various configuration options.
+    kubectl-reboot is a kubectl plugin that provides safe node restart operations for Kubernetes clusters.
+    
+    Features:
+    - 🔄 Safe Node Restart: Automatically cordon, drain, reboot, and uncordon nodes
+    - 🚀 SSH Integration: Reboot nodes via SSH with customizable commands  
+    - 🔍 Reboot Verification: Verify successful reboots by monitoring Boot ID changes
+    - 🌐 Cluster-wide Operations: Restart all nodes or specific subsets
+    - 🧪 Dry-run Mode: Preview operations without making changes
+    - ⚡ Flexible Configuration: Extensive customization options
+    
+    Usage examples:
+    - kubectl reboot node1                    # Restart single node
+    - kubectl reboot --all                    # Restart all nodes
+    - kubectl reboot --dry-run node1          # Preview without executing
+    - kubectl reboot --ssh-user ubuntu node1  # Custom SSH user
+  
+  caveats: |
+    This plugin requires:
+    - SSH access to target nodes (key-based authentication recommended)
+    - Appropriate RBAC permissions for node operations
+    - kubectl configured and authenticated to your cluster
+    
+    IMPORTANT: Always test in non-production environments first.
   
   platforms:
   - selector:
@@ -18,7 +37,7 @@ spec:
         os: linux
         arch: amd64
     uri: https://github.com/ayetkin/kubectl-reboot/releases/download/v1.0.0/kubectl-reboot-linux-amd64.tar.gz
-    sha256: "TO_BE_FILLED"
+    sha256: "TO_BE_FILLED_BY_RELEASE_PIPELINE"
     bin: kubectl-reboot
     files:
     - from: kubectl-reboot
@@ -29,7 +48,7 @@ spec:
         os: linux
         arch: arm64
     uri: https://github.com/ayetkin/kubectl-reboot/releases/download/v1.0.0/kubectl-reboot-linux-arm64.tar.gz
-    sha256: "TO_BE_FILLED"
+    sha256: "TO_BE_FILLED_BY_RELEASE_PIPELINE"
     bin: kubectl-reboot
     files:
     - from: kubectl-reboot
@@ -40,7 +59,7 @@ spec:
         os: darwin
         arch: amd64
     uri: https://github.com/ayetkin/kubectl-reboot/releases/download/v1.0.0/kubectl-reboot-darwin-amd64.tar.gz
-    sha256: "TO_BE_FILLED"
+    sha256: "TO_BE_FILLED_BY_RELEASE_PIPELINE"
     bin: kubectl-reboot
     files:
     - from: kubectl-reboot
@@ -51,7 +70,7 @@ spec:
         os: darwin
         arch: arm64
     uri: https://github.com/ayetkin/kubectl-reboot/releases/download/v1.0.0/kubectl-reboot-darwin-arm64.tar.gz
-    sha256: "TO_BE_FILLED"
+    sha256: "TO_BE_FILLED_BY_RELEASE_PIPELINE"
     bin: kubectl-reboot
     files:
     - from: kubectl-reboot
@@ -62,7 +81,7 @@ spec:
         os: windows
         arch: amd64
     uri: https://github.com/ayetkin/kubectl-reboot/releases/download/v1.0.0/kubectl-reboot-windows-amd64.zip
-    sha256: "TO_BE_FILLED"
+    sha256: "TO_BE_FILLED_BY_RELEASE_PIPELINE"
     bin: kubectl-reboot.exe
     files:
     - from: kubectl-reboot.exe
