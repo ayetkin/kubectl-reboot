@@ -107,14 +107,10 @@ validate_checksums() {
     fi
     
     # Verify all platforms have checksums
-    local platforms=("linux-amd64" "linux-arm64" "darwin-amd64" "darwin-arm64" "windows-amd64")
+    local platforms=("linux-amd64" "linux-arm64" "darwin-amd64" "darwin-arm64")
     
     for platform in "${platforms[@]}"; do
-        if [[ "$platform" == "windows-amd64" ]]; then
-            local filename="kubectl-reboot-${platform}.zip"
-        else
-            local filename="kubectl-reboot-${platform}.tar.gz"
-        fi
+        local filename="kubectl-reboot-${platform}.tar.gz"
         
         if ! grep -q "$filename" checksums.txt; then
             error "Checksum for $filename not found in checksums.txt"

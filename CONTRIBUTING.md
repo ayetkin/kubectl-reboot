@@ -43,7 +43,7 @@ This project follows the [Kubernetes Community Code of Conduct](https://github.c
 
 #### Prerequisites
 
-- **Go 1.23 or later**
+- **Go 1.24 or later**
 - **kubectl** installed and configured
 - **Access to a Kubernetes cluster** for testing (kind, minikube, or cloud cluster)
 - **SSH access** to test nodes (for integration testing)

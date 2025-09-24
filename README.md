@@ -38,12 +38,6 @@ If you haven't installed Krew yet, follow the [official installation guide](http
 )
 ```
 
-**Windows (PowerShell):**
-```powershell
-iwr -useb get.scoop.sh | iex
-scoop install krew
-```
-
 #### Step 2: Add Krew to PATH
 
 Add the following to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
@@ -88,11 +82,6 @@ sudo mv kubectl-reboot /usr/local/bin/
 
 # Make executable
 sudo chmod +x /usr/local/bin/kubectl-reboot
-```
-
-**Windows:**
-```powershell
-# Download and extract manually, then add to PATH
 ```
 
 #### Build from Source

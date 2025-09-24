@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Enhanced GitHub Actions CI/CD pipelines with comprehensive testing
 - Security scanning with Gosec and Trivy
-- Multi-platform testing (Ubuntu, macOS, Windows)
+- Multi-platform testing (Ubuntu, macOS)
 - Comprehensive lint configuration with golangci-lint
 - Automated release scripts for streamlined releases
 - Improved Krew plugin manifest with detailed descriptions
@@ -45,8 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation and examples
 - Support for multiple platforms:
   - Linux (amd64, arm64)
-  - macOS (amd64, arm64) 
-  - Windows (amd64)
+  - macOS (amd64, arm64)
 - Cloud provider examples for AWS EKS, Google GKE, and Azure AKS
 - Rich emoji-based logging for better user experience
 - RBAC permission examples and security considerations

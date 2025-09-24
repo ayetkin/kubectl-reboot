@@ -75,14 +75,3 @@ spec:
     files:
     - from: kubectl-reboot
       to: kubectl-reboot
-
-  - selector:
-      matchLabels:
-        os: windows
-        arch: amd64
-    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/v1.0.0/kubectl-reboot-windows-amd64.zip
-    sha256: "TO_BE_FILLED_BY_RELEASE_PIPELINE"
-    bin: kubectl-reboot.exe
-    files:
-    - from: kubectl-reboot.exe
-      to: kubectl-reboot.exe
