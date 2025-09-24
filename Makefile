@@ -26,7 +26,7 @@ help: ## Show this help message
 
 build: ## Build the plugin binary
 	@echo "Building $(PLUGIN_NAME)..."
-	@CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o bin/$(PLUGIN_NAME) ./$(MAIN_PATH)
+	@CGO_ENABLED=0 go build -buildvcs=false -ldflags "$(LDFLAGS)" -o bin/$(PLUGIN_NAME) ./$(MAIN_PATH)
 
 clean: ## Remove build artifacts
 	@echo "Cleaning up..."
@@ -56,7 +56,7 @@ release: clean ## Build release binaries for all platforms
 		GOOS=$(word 1,$(subst /, ,$(platform))) \
 		GOARCH=$(word 2,$(subst /, ,$(platform))) \
 		CGO_ENABLED=0 \
-		go build -ldflags "$(LDFLAGS)" \
+		go build -buildvcs=false -ldflags "$(LDFLAGS)" \
 		-o dist/$(PLUGIN_NAME)-$(word 1,$(subst /, ,$(platform)))-$(word 2,$(subst /, ,$(platform)))$(if $(findstring windows,$(platform)),.exe,) \
 		./$(MAIN_PATH); \
 	)
