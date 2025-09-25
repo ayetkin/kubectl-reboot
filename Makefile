@@ -66,10 +66,10 @@ package: release ## Package release binaries
 	@for file in dist/$(PLUGIN_NAME)-*; do \
 		if [[ "$$file" == *".exe" ]]; then \
 			platform=$$(basename $$file .exe | sed 's/$(PLUGIN_NAME)-//'); \
-			zip -j dist/$(PLUGIN_NAME)-$$platform.zip $$file; \
+			zip -j dist/$(PLUGIN_NAME)-$$platform.zip $$file LICENSE; \
 		else \
 			platform=$$(basename $$file | sed 's/$(PLUGIN_NAME)-//'); \
-			tar -czf dist/$(PLUGIN_NAME)-$$platform.tar.gz -C dist $$(basename $$file); \
+			tar -czf dist/$(PLUGIN_NAME)-$$platform.tar.gz -C dist $$(basename $$file) -C .. LICENSE; \
 		fi; \
 	done
 
