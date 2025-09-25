@@ -3,7 +3,7 @@ kind: Plugin
 metadata:
   name: reboot
 spec:
-  version: "{{VERSION}}"
+  version: "${VERSION}"
   homepage: https://github.com/ayetkin/kubectl-reboot
   shortDescription: Safely restart Kubernetes nodes with automated drain and SSH reboot
   description: |
@@ -42,8 +42,8 @@ spec:
         operator: "In"
         values:
         - amd64
-    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/{{VERSION}}/kubectl-reboot-linux-amd64.tar.gz
-    sha256: "{{CHECKSUM_LINUX_AMD64}}"
+    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/${VERSION}/kubectl-reboot-linux-amd64.tar.gz
+    sha256: "${CHECKSUM_LINUX_AMD64}"
     bin: kubectl-reboot
     files:
     - from: "kubectl-reboot-linux-amd64"
@@ -59,8 +59,8 @@ spec:
         operator: "In"
         values:
         - arm64
-    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/{{VERSION}}/kubectl-reboot-linux-arm64.tar.gz
-    sha256: "{{CHECKSUM_LINUX_ARM64}}"
+    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/${VERSION}/kubectl-reboot-linux-arm64.tar.gz
+    sha256: "${CHECKSUM_LINUX_ARM64}"
     bin: kubectl-reboot
     files:
     - from: "kubectl-reboot-linux-arm64"
@@ -76,8 +76,8 @@ spec:
         operator: "In"
         values:
         - amd64
-    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/{{VERSION}}/kubectl-reboot-darwin-amd64.tar.gz
-    sha256: "{{CHECKSUM_DARWIN_AMD64}}"
+    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/${VERSION}/kubectl-reboot-darwin-amd64.tar.gz
+    sha256: "${CHECKSUM_DARWIN_AMD64}"
     bin: kubectl-reboot
     files:
     - from: "kubectl-reboot-darwin-amd64"
@@ -93,8 +93,8 @@ spec:
         operator: "In"
         values:
         - arm64
-    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/{{VERSION}}/kubectl-reboot-darwin-arm64.tar.gz
-    sha256: "{{CHECKSUM_DARWIN_ARM64}}"
+    uri: https://github.com/ayetkin/kubectl-reboot/releases/download/${VERSION}/kubectl-reboot-darwin-arm64.tar.gz
+    sha256: "${CHECKSUM_DARWIN_ARM64}"
     bin: kubectl-reboot
     files:
     - from: "kubectl-reboot-darwin-arm64"

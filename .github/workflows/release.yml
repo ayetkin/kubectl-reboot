@@ -78,6 +78,10 @@ jobs:
     - name: Build release binaries
       run: make package
     
+    - name: Install envsubst
+      run: |
+        apt-get update && apt-get install -y gettext-base
+    
     - name: Generate checksums and update manifest
       run: |
         cd dist
