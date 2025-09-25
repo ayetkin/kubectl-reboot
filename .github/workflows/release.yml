@@ -30,6 +30,8 @@ jobs:
     
     - name: Run all checks (vet, fmt, test)
       run: make check
+      env:
+        GOFLAGS: "-buildvcs=false"
 
   build:
     needs: test
