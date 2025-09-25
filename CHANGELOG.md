@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-09-25
+
 ### Added
 - Enhanced GitHub Actions CI/CD pipelines with comprehensive testing
 - Security scanning with Gosec and Trivy
@@ -19,10 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated GitHub Actions workflows to use latest action versions
 - Enhanced Krew manifest with better descriptions and caveats
 - Improved error handling and logging throughout codebase
+- Simplified logging function parameters and updated mock public key verification method
+- Set GOFLAGS to disable VCS information in CI workflows and updated golangci-lint configuration
 
 ### Fixed
 - Resolved potential security vulnerabilities identified by static analysis
 - Fixed formatting issues across all Go source files
+
+## [1.1.0] - 2024-09-24
+
+### Changed
+- Set GOFLAGS to disable VCS information in CI workflows
+- Updated golangci-lint configuration for better code quality
+- Improved build process with disabled VCS information
+
+### Fixed
+- Streamlined CI workflows by removing redundant steps
+- Enhanced build output formatting
 
 ## [1.0.0] - 2024-09-24
 
@@ -67,5 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guidelines for developers
 - Comprehensive help system with examples
 
-[Unreleased]: https://github.com/ayetkin/kubectl-reboot/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/ayetkin/kubectl-reboot/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/ayetkin/kubectl-reboot/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/ayetkin/kubectl-reboot/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ayetkin/kubectl-reboot/releases/tag/v1.0.0

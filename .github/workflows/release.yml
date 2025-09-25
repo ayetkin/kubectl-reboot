@@ -61,19 +61,14 @@ jobs:
     - name: Generate changelog
       id: changelog
       run: |
-        if git tag --list | grep -q '^v'; then
-          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep '^v' | head -2 | tail -1)
-          if [ -n "$PREVIOUS_TAG" ]; then
-            echo "changelog<<EOF" >> $GITHUB_OUTPUT
-            git log --pretty=format:"- %s (%h)" ${PREVIOUS_TAG}..HEAD >> $GITHUB_OUTPUT
-            echo "" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "changelog=Initial release" >> $GITHUB_OUTPUT
-          fi
-        else
-          echo "changelog=Initial release" >> $GITHUB_OUTPUT
-        fi
+        # Make the extraction script executable
+        chmod +x ./scripts/extract-changelog.sh
+        
+        # Extract changelog for this version
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        ./scripts/extract-changelog.sh ${{ steps.version.outputs.VERSION }} >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
     
     - name: Build release binaries
       run: make package
