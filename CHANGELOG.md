@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-09-25
+
+### Added
+- Changelog extraction script (`scripts/extract-changelog.sh`) for automated release notes
+- Version-specific release notes generation from CHANGELOG.md
+
+### Changed
+- GitHub Actions release workflow now extracts detailed release notes from CHANGELOG.md instead of generating generic "Initial release" messages
+- Release notes now show organized feature lists with Added/Changed/Fixed categories
+- Improved release documentation with proper versioning
+
+### Fixed
+- Resolved "Initial release" issue in GitHub releases by implementing proper changelog parsing
+- Enhanced release workflow to provide meaningful, detailed release notes
+
 ## [1.2.0] - 2025-09-25
 
 ### Added
@@ -82,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guidelines for developers
 - Comprehensive help system with examples
 
-[Unreleased]: https://github.com/ayetkin/kubectl-reboot/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/ayetkin/kubectl-reboot/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/ayetkin/kubectl-reboot/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/ayetkin/kubectl-reboot/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ayetkin/kubectl-reboot/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ayetkin/kubectl-reboot/releases/tag/v1.0.0

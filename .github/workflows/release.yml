@@ -40,7 +40,6 @@ jobs:
       image: golang:1.24
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
-      release-notes: ${{ steps.changelog.outputs.changelog }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -57,18 +56,6 @@ jobs:
         fi
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Building version: $VERSION"
-    
-    - name: Generate changelog
-      id: changelog
-      run: |
-        # Make the extraction script executable
-        chmod +x ./scripts/extract-changelog.sh
-        
-        # Extract changelog for this version
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        ./scripts/extract-changelog.sh ${{ steps.version.outputs.VERSION }} >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
     
     - name: Build release binaries
       run: make package
@@ -134,9 +121,6 @@ jobs:
         tag_name: ${{ needs.build.outputs.version }}
         name: Release ${{ needs.build.outputs.version }}
         body: |
-          ## Changes
-          ${{ needs.build.outputs.release-notes }}
-          
           ## Installation
           
           ### Via Krew (Recommended)
