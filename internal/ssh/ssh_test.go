@@ -87,12 +87,11 @@ func TestRunnerDryRun(t *testing.T) {
 
 	// Capture log output
 	var loggedMessages []string
-	logf := func(format string, args ...any) {
+	logf := func(format string, _ ...any) {
 		loggedMessages = append(loggedMessages, format)
 	}
 
 	err := runner.Run("testhost", "sudo reboot", logf)
-
 	if err != nil {
 		t.Errorf("Expected no error in dry-run mode, got: %v", err)
 	}
@@ -171,7 +170,7 @@ func (m *mockPublicKey) Marshal() []byte {
 	return []byte("mock-key-data")
 }
 
-func (m *mockPublicKey) Verify(data []byte, sig *ssh.Signature) error {
+func (m *mockPublicKey) Verify(_ []byte, _ *ssh.Signature) error {
 	return nil
 }
 
